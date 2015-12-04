@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.HashMap;
 
@@ -41,13 +42,21 @@ public class MainActivity extends AppCompatActivity {
     public void WriteBtn(View v) {
         File file;
         FileOutputStream outputStream;
+        OutputStreamWriter outputStreamWriter;
 
         // add-write text into file
         try {
-            String vocabulary = txtEng.getText().toString() + "=" + txtCht.getText().toString() + "\n";
+            String vocabulary = txtEng.getText().toString() + "=" + txtCht.getText().toString();
             file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
-            outputStream = new FileOutputStream(file);
+            outputStream = new FileOutputStream(file, true);
             outputStream.write(vocabulary.getBytes());
+
+            outputStreamWriter = new OutputStreamWriter(outputStream);
+            outputStreamWriter.append("\r\n");
+            outputStreamWriter.flush();
+            outputStreamWriter.close();
+
+            outputStream.flush();
             outputStream.close();
             /*FileOutputStream fileout=openFileOutput("myVocabularyTextFile.txt", MODE_PRIVATE);
             OutputStreamWriter outputWriter=new OutputStreamWriter(fileout);
@@ -57,6 +66,10 @@ public class MainActivity extends AppCompatActivity {
             //display file saved message
             Toast.makeText(getBaseContext(), "File saved successfully!",
                     Toast.LENGTH_SHORT).show();
+
+            txtCht.setText("");
+            txtEng.setText("");
+            txtEng.requestFocus();
 
         } catch (Exception e) {
             e.printStackTrace();
