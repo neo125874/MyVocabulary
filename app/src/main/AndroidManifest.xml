@@ -2,8 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="vocabulary.android.com.myvocabulary" >
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -19,10 +20,14 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".MyAlarmService"
+        <service
+            android:name=".MyAlarmService"
             android:enabled="true" />
 
-        <receiver android:name=".MyReceiver"/>
+        <receiver android:name=".MyReceiver" />
+
+        <activity android:name=".DisplayActivity" >
+        </activity>
     </application>
 
 </manifest>
