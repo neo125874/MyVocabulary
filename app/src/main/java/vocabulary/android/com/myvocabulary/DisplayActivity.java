@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
@@ -14,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 
 import cz.msebera.android.httpclient.Header;
@@ -104,6 +107,18 @@ public class DisplayActivity extends AppCompatActivity {
                         txt_search.setText(jsonObject.getString("text") + " [ " + jsonObject.getString("ts") + " ]" + ": " + jsonObject.getString("pos") + ". ");
                         jsonArray = jsonObject.getJSONArray("tr");
 
+                        Gson gson = new Gson();
+                        Type listType = new TypeToken<ArrayList<SynObject>>(){}.getType();
+                        ArrayList<SynObject> synObjects = gson.fromJson(jsonArray.toString(), listType);
+                        txt_tr.setText("");
+                        for(int i=0; i<synObjects.size(); i++){
+                            if(i > 0){
+                                txt_tr.append("\n");
+                            }
+                            SynObject synObject = synObjects.get(i);
+                            txt_tr.append(synObject.getText()
+                            + " (" + synObject.getPos() + ") ");
+                        }
 
                         /*Gson gson = new Gson();
                         Type listType = new TypeToken<ArrayList<Syn>>(){}.getType();
