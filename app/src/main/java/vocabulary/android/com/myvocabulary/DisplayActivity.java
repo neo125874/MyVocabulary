@@ -1,8 +1,10 @@
 package vocabulary.android.com.myvocabulary;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -66,6 +68,19 @@ public class DisplayActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        vocabulary = intent.getStringExtra("translate");
+        progressDialog.show();
+        params = new RequestParams();
+        params.put("key", translateKey);
+        params.put("lang", "en-en");
+        params.put("text", vocabulary);
+        doAsyncHttpClient();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_display);
@@ -85,6 +100,10 @@ public class DisplayActivity extends AppCompatActivity {
         params.put("lang", "en-en");
         params.put("text", vocabulary);
 
+        doAsyncHttpClient();
+    }
+
+    private void doAsyncHttpClient(){
         client.get(translateApi, params, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -113,12 +132,27 @@ public class DisplayActivity extends AppCompatActivity {
                         txt_tr.setText("");
                         for(int i=0; i<synObjects.size(); i++){
                             if(i > 0){
-                                txt_tr.append("\n");
+                                txt_tr.append("\n\n");
                             }
                             SynObject synObject = synObjects.get(i);
                             txt_tr.append(synObject.getText()
-                            + " (" + synObject.getPos() + ") ");
+                                    + " (" + synObject.getPos() + ") ");
+
+                            if(synObject.getSyn() != null){
+                                txt_tr.append("\n");
+                                ArrayList<Syn> synArrayList = synObject.getSyn();
+                                for (int j=0; j<synArrayList.size(); j++){
+                                    Syn syn = synArrayList.get(j);
+                                    if(j > 0) txt_tr.append("\n");
+
+                                    txt_tr.append("\t\t" + syn.getText() + " (" + syn.getPos() + ") ");
+                                }
+                            }
                         }
+
+                        txt_syn.setVisibility(View.GONE);
+                        txt_mean.setVisibility(View.GONE);
+                        txt_ex.setVisibility(View.GONE);
 
                         /*Gson gson = new Gson();
                         Type listType = new TypeToken<ArrayList<Syn>>(){}.getType();
