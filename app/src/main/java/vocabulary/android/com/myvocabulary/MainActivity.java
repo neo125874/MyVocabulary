@@ -19,7 +19,6 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
 import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,8 +28,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.HashMap;
-
-import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,8 +40,8 @@ public class MainActivity extends AppCompatActivity {
     //private RequestParams params;
     private ProgressDialog progressDialog;
     private String defaultDropBoxUrl = "https://www.dropbox.com/s/3bpoday33ypbzif/myVocabularyTextFile.txt?dl=0";
-    final private String APP_KEY = this.getString(R.string.app_key);
-    final private String APP_SECRET = this.getString(R.string.app_secret);
+    private String APP_KEY = "";
+    private String APP_SECRET = "";
     private DropboxAPI<AndroidAuthSession> mDBApi;
 
     @Override
@@ -72,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
         txtEng=(EditText)findViewById(R.id.editText1);
         txtCht=(EditText)findViewById(R.id.editText2);
 
+        APP_KEY = this.getString(R.string.app_key);
+        APP_SECRET = this.getString(R.string.app_secret);
         AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
         AndroidAuthSession session = new AndroidAuthSession(appKeys);
         mDBApi = new DropboxAPI<AndroidAuthSession>(session);
@@ -162,77 +161,72 @@ public class MainActivity extends AppCompatActivity {
         progressDialog.setMessage("Loading");
         progressDialog.setCancelable(false);
         progressDialog.show();
-        client = new AsyncHttpClient(true, 80, 443);
-        client.get(defaultDropBoxUrl, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                if (progressDialog != null || progressDialog.isShowing())
-                    progressDialog.dismiss();
 
-                String content = new String(responseBody);
-                if(RenewFromDropbox(responseBody)) {
-                    Toast.makeText(getBaseContext(), "File renewed successfully!",
-                            Toast.LENGTH_SHORT).show();
+        //dropbox api
 
-                    File file;
-                    FileInputStream inputStream;
-                    //reading text from file
-                    try {
-                        file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
-                        inputStream = new FileInputStream(file);
-                        InputStreamReader InputRead = new InputStreamReader(inputStream);
+        try {
+            File dropboxFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+            FileOutputStream outputStream = new FileOutputStream(dropboxFile);
+            DropboxAPI.DropboxFileInfo info = mDBApi.getFile("/myVocabularyTextFile.txt", null, outputStream, null);
+            Log.i("DbExampleLog", "The file's rev is: " + info.getMetadata().rev);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-                        BufferedReader buffreader = new BufferedReader(InputRead);
 
-                        String line;
+        Toast.makeText(getBaseContext(), "File renewed successfully!",
+                Toast.LENGTH_SHORT).show();
 
-                        do {
-                            line = buffreader.readLine();
-                            // do something with the line
-                            if (line.contains("=")) {
-                                String[] strings = line.split("=");
-                                map.put(strings[0], strings[1]);
-                            }
+        File file;
+        FileInputStream inputStream;
+        //reading text from file
+        try {
+            file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+            inputStream = new FileInputStream(file);
+            InputStreamReader InputRead = new InputStreamReader(inputStream);
 
-                            Intent myIntent = new Intent(MainActivity.this, MyReceiver.class);
-                            myIntent.putExtra("map", map);
-                            pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, myIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            BufferedReader buffreader = new BufferedReader(InputRead);
 
-                            AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-                            //alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
-                            Calendar calendar = Calendar.getInstance();
-                            calendar.add(calendar.MINUTE, 1);
-                            long howmany = calendar.getTimeInMillis() - System.currentTimeMillis();
+            String line;
 
-                            alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, howmany, 1 * 60 * 1000, pendingIntent);
-
-                        } while (line != null);
-                        //char[] inputBuffer= new char[READ_BLOCK_SIZE];
-                        //String s="";
-                        //int charRead;
-
-                        //while ((charRead=InputRead.read(inputBuffer))>0) {
-                        // char to string conversion
-                        //    String readstring=String.copyValueOf(inputBuffer,0,charRead);
-                        //    s +=readstring;
-                        //}
-                        //InputRead.close();
-
-                        inputStream.close();
-
-                        //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            do {
+                line = buffreader.readLine();
+                // do something with the line
+                if (line.contains("=")) {
+                    String[] strings = line.split("=");
+                    map.put(strings[0], strings[1]);
                 }
-            }
 
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                if (progressDialog != null || progressDialog.isShowing())
-                    progressDialog.dismiss();
-            }
-        });
+                Intent myIntent = new Intent(MainActivity.this, MyReceiver.class);
+                myIntent.putExtra("map", map);
+                pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, myIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+                //alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
+                Calendar calendar = Calendar.getInstance();
+                calendar.add(calendar.MINUTE, 1);
+                long howmany = calendar.getTimeInMillis() - System.currentTimeMillis();
+
+                alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, howmany, 1 * 60 * 1000, pendingIntent);
+
+            } while (line != null);
+            //char[] inputBuffer= new char[READ_BLOCK_SIZE];
+            //String s="";
+            //int charRead;
+
+            //while ((charRead=InputRead.read(inputBuffer))>0) {
+            // char to string conversion
+            //    String readstring=String.copyValueOf(inputBuffer,0,charRead);
+            //    s +=readstring;
+            //}
+            //InputRead.close();
+
+            inputStream.close();
+
+            //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
