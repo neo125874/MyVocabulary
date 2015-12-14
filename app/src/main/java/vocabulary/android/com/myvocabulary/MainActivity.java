@@ -1,15 +1,14 @@
 package vocabulary.android.com.myvocabulary;
 
 import android.app.AlarmManager;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -26,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 
@@ -43,6 +43,12 @@ public class MainActivity extends AppCompatActivity {
     private String APP_KEY = "";
     private String APP_SECRET = "";
     private DropboxAPI<AndroidAuthSession> mDBApi;
+    private static final String ACCOUNT_PREFS_NAME = "prefs";
+    private static final String ACCESS_KEY_NAME = "ACCESS_KEY";
+    private static final String ACCESS_SECRET_NAME = "ACCESS_SECRET";
+    private boolean mLoggedIn;
+    private final String VOCABULARY_DIR = "/MyVocabulary/";
+    private Long mFileLen;
 
     @Override
     protected void onResume() {
@@ -54,11 +60,43 @@ public class MainActivity extends AppCompatActivity {
                 mDBApi.getSession().finishAuthentication();
 
                 //shared preference
-                String accessToken = mDBApi.getSession().getOAuth2AccessToken();
+                //String accessToken = mDBApi.getSession().getOAuth2AccessToken();
+                storeAuth(mDBApi.getSession());
+                setLoggedIn(true);
             } catch (IllegalStateException e) {
                 Log.i("DbAuthLog", "Error authenticating", e);
             }
         }
+    }
+
+    private void storeAuth(AndroidAuthSession session) {
+        // Store the OAuth 2 access token, if there is one.
+        String oauth2AccessToken = session.getOAuth2AccessToken();
+        if (oauth2AccessToken != null) {
+            SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+            SharedPreferences.Editor edit = prefs.edit();
+            edit.putString(ACCESS_KEY_NAME, "oauth2:");
+            edit.putString(ACCESS_SECRET_NAME, oauth2AccessToken);
+            edit.commit();
+            return;
+        }
+    }
+
+    private void logOut() {
+        // Remove credentials from the session
+        mDBApi.getSession().unlink();
+
+        // Clear our stored keys
+        clearKeys();
+        // Change UI state to display logged out version
+        setLoggedIn(false);
+    }
+
+    private void clearKeys() {
+        SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.clear();
+        edit.commit();
     }
 
     @Override
@@ -71,10 +109,41 @@ public class MainActivity extends AppCompatActivity {
 
         APP_KEY = this.getString(R.string.app_key);
         APP_SECRET = this.getString(R.string.app_secret);
-        AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-        AndroidAuthSession session = new AndroidAuthSession(appKeys);
+        //AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
+        //AndroidAuthSession session = new AndroidAuthSession(appKeys);
+        AndroidAuthSession session = buildSession();
         mDBApi = new DropboxAPI<AndroidAuthSession>(session);
-        mDBApi.getSession().startOAuth2Authentication(MainActivity.this);
+        if(mDBApi.getSession().isLinked())
+            setLoggedIn(mDBApi.getSession().isLinked());
+        else
+            mDBApi.getSession().startOAuth2Authentication(MainActivity.this);
+        //checkAppKeySetup();
+
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Loading");
+        progressDialog.setCancelable(false);
+    }
+
+    private void setLoggedIn(boolean loggedIn) {
+        mLoggedIn = loggedIn;
+    }
+
+    private AndroidAuthSession buildSession() {
+        AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
+        AndroidAuthSession session = new AndroidAuthSession(appKeyPair);
+
+        loadAuth(session);
+
+        return session;
+    }
+
+    private void loadAuth(AndroidAuthSession session) {
+        SharedPreferences prefs = getSharedPreferences(ACCOUNT_PREFS_NAME, 0);
+        String key = prefs.getString(ACCESS_KEY_NAME, null);
+        String secret = prefs.getString(ACCESS_SECRET_NAME, null);
+        if (key == null || secret == null || key.length() == 0 || secret.length() == 0) return;
+
+        session.setOAuth2AccessToken(secret);
     }
 
     // write text to file
@@ -115,87 +184,88 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private int notification_id = 1;
-    private void presentNotification(int visibility, int icon, String title, String text) {
-        Notification notification = new NotificationCompat.Builder(this)
-                .setCategory(Notification.CATEGORY_MESSAGE)
-                .setContentTitle(title)
-                .setContentText(text)
-                .setSmallIcon(icon)
-                .setAutoCancel(true)
-                .setVisibility(visibility).build();
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(notification_id, notification);
-    }
+    private class dropboxApiTask extends AsyncTask<Void, Void, Void>{
 
-    private boolean RenewFromDropbox(byte[] responseBody){
-        File file;
-        FileOutputStream outputStream;
-        OutputStreamWriter outputStreamWriter;
-
-        try {
-            file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
-            outputStream = new FileOutputStream(file, true);
-            outputStream.write(responseBody);
-
-            outputStreamWriter = new OutputStreamWriter(outputStream);
-            outputStreamWriter.append("\r\n");
-            outputStreamWriter.flush();
-            outputStreamWriter.close();
-
-            outputStream.flush();
-            outputStream.close();
-
-            return true;
-        }catch (Exception e){
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // Read text from file
-    public void ReadBtn(View v) {
-
-        progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage("Loading");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-
-        //dropbox api
-
-        try {
-            File dropboxFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
-            FileOutputStream outputStream = new FileOutputStream(dropboxFile);
-            DropboxAPI.DropboxFileInfo info = mDBApi.getFile("/myVocabularyTextFile.txt", null, outputStream, null);
-            Log.i("DbExampleLog", "The file's rev is: " + info.getMetadata().rev);
-        } catch (Exception e) {
-            e.printStackTrace();
+        @Override
+        protected void onPreExecute() {
+            progressDialog.show();
         }
 
-
-        Toast.makeText(getBaseContext(), "File renewed successfully!",
-                Toast.LENGTH_SHORT).show();
-
-        File file;
-        FileInputStream inputStream;
-        //reading text from file
-        try {
-            file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
-            inputStream = new FileInputStream(file);
-            InputStreamReader InputRead = new InputStreamReader(inputStream);
-
-            BufferedReader buffreader = new BufferedReader(InputRead);
-
-            String line;
-
-            do {
-                line = buffreader.readLine();
-                // do something with the line
-                if (line.contains("=")) {
-                    String[] strings = line.split("=");
-                    map.put(strings[0], strings[1]);
+        @Override
+        protected Void doInBackground(Void... params) {
+            //dropbox api
+            try {
+                // Get the metadata for a directory
+                DropboxAPI.Entry dirent = mDBApi.metadata(VOCABULARY_DIR, 1000, null, true, null);
+                ArrayList<DropboxAPI.Entry> thumbs = new ArrayList<DropboxAPI.Entry>();
+                for (DropboxAPI.Entry ent: dirent.contents) {
+                    // Add it to the list of thumbs we can choose from
+                    thumbs.add(ent);
                 }
+                int index = 0;
+                for(int i=0; i<thumbs.size(); i++){
+                    if(thumbs.get(i).path.startsWith(VOCABULARY_DIR)){
+                        index = i;
+                    }
+                }
+                DropboxAPI.Entry ent = thumbs.get(index);
+                String path = ent.path;
+                mFileLen = ent.bytes;
+
+                File dropboxFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+                FileOutputStream outputStream = new FileOutputStream(dropboxFile);
+                mDBApi.getFile(path, null, outputStream, null);
+
+                /*File dropboxFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+                FileOutputStream outputStream = new FileOutputStream(dropboxFile);
+                DropboxAPI.DropboxFileInfo info = mDBApi.getFile("/myVocabularyTextFile.txt", null, outputStream, null);
+                Log.i("DbExampleLog", "The file's rev is: " + info.getMetadata().rev);*/
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if (progressDialog != null || progressDialog.isShowing())
+                progressDialog.dismiss();
+            Toast.makeText(getBaseContext(), "File renewed successfully!",
+                    Toast.LENGTH_SHORT).show();
+
+            File file;
+            FileInputStream inputStream;
+            //reading text from file
+            try {
+                file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+                inputStream = new FileInputStream(file);
+                InputStreamReader InputRead = new InputStreamReader(inputStream);
+
+                BufferedReader buffreader = new BufferedReader(InputRead);
+
+                String line;
+
+                do {
+                    line = buffreader.readLine();
+                    // do something with the line
+                    if (line.contains("=")) {
+                        String[] strings = line.split("=");
+                        map.put(strings[0], strings[1]);
+                    }
+
+                } while (line != null);
+                //char[] inputBuffer= new char[READ_BLOCK_SIZE];
+                //String s="";
+                //int charRead;
+
+                //while ((charRead=InputRead.read(inputBuffer))>0) {
+                // char to string conversion
+                //    String readstring=String.copyValueOf(inputBuffer,0,charRead);
+                //    s +=readstring;
+                //}
+                //InputRead.close();
+
+                inputStream.close();
 
                 Intent myIntent = new Intent(MainActivity.this, MyReceiver.class);
                 myIntent.putExtra("map", map);
@@ -209,24 +279,16 @@ public class MainActivity extends AppCompatActivity {
 
                 alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, howmany, 1 * 60 * 1000, pendingIntent);
 
-            } while (line != null);
-            //char[] inputBuffer= new char[READ_BLOCK_SIZE];
-            //String s="";
-            //int charRead;
+                //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
 
-            //while ((charRead=InputRead.read(inputBuffer))>0) {
-            // char to string conversion
-            //    String readstring=String.copyValueOf(inputBuffer,0,charRead);
-            //    s +=readstring;
-            //}
-            //InputRead.close();
-
-            inputStream.close();
-
-            //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+    }
+
+    // Read text from file
+    public void ReadBtn(View v) {
+        new dropboxApiTask().execute();
     }
 }

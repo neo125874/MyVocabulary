@@ -49,7 +49,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_below="@+id/editText2"
-        android:text="Write Vocabulary into File"
+        android:text="Write Vocabulary into Dropbox File"
         android:onClick="WriteBtn"
         android:layout_margin="5dp"/>
     <Button
@@ -59,7 +59,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_below="@+id/button1"
-        android:text="Read Vocabulary From file"
+        android:text="Read Vocabulary From Dropbox File"
         android:onClick="ReadBtn"
         android:layout_margin="5dp" />
 </RelativeLayout>
