@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.ProgressListener;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
 import com.loopj.android.http.AsyncHttpClient;
@@ -120,7 +121,9 @@ public class MainActivity extends AppCompatActivity {
         //checkAppKeySetup();
 
         progressDialog = new ProgressDialog(this);
+        progressDialog.setMax(100);
         progressDialog.setMessage("Loading");
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.setCancelable(false);
     }
 
@@ -144,6 +147,18 @@ public class MainActivity extends AppCompatActivity {
         if (key == null || secret == null || key.length() == 0 || secret.length() == 0) return;
 
         session.setOAuth2AccessToken(secret);
+    }
+
+    //upload
+    public void UploadBtn(View view){
+        try {
+            File file;
+            file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+            uploadApiTask uploadApiTask = new uploadApiTask(MainActivity.this, progressDialog, mDBApi, VOCABULARY_DIR, file);
+            uploadApiTask.execute();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     // write text to file
@@ -184,7 +199,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class dropboxApiTask extends AsyncTask<Void, Void, Void>{
+    private class dropboxApiTask extends AsyncTask<Void, Long, Void>{
+
+        @Override
+        protected void onProgressUpdate(Long... progress) {
+            int percent = (int)(100.0*(double)progress[0]/mFileLen + 0.5);
+            progressDialog.setProgress(percent);
+        }
 
         @Override
         protected void onPreExecute() {
@@ -214,7 +235,20 @@ public class MainActivity extends AppCompatActivity {
 
                 File dropboxFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
                 FileOutputStream outputStream = new FileOutputStream(dropboxFile);
-                mDBApi.getFile(path, null, outputStream, null);
+                mDBApi.getFile(path, null, outputStream,
+                        new ProgressListener() {
+                            @Override
+                            public void onProgress(long bytes, long total) {
+                                publishProgress(bytes);
+                            }
+
+                            @Override
+                            public long progressInterval()
+                            {
+                                // Update the progress bar every half-second or so
+                                return 500;
+                            }
+                        });
 
                 /*File dropboxFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
                 FileOutputStream outputStream = new FileOutputStream(dropboxFile);
