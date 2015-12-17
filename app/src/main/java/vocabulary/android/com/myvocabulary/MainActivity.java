@@ -262,11 +262,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            if (progressDialog != null || progressDialog.isShowing())
-                progressDialog.dismiss();
-            Toast.makeText(getBaseContext(), "File renewed successfully!",
-                    Toast.LENGTH_SHORT).show();
-
             File file;
             FileInputStream inputStream;
             //reading text from file
@@ -282,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
                 do {
                     line = buffreader.readLine();
                     // do something with the line
-                    if (line.contains("=")) {
+                    if (line!=null && line.contains("=")) {
                         String[] strings = line.split("=");
                         map.put(strings[0], strings[1]);
                     }
@@ -318,6 +313,11 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            if (progressDialog != null || progressDialog.isShowing())
+                progressDialog.dismiss();
+            Toast.makeText(getBaseContext(), "File renewed successfully!",
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
