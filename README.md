@@ -11,5 +11,7 @@ Portable Editable Your Own Vocabulary
 
 3. **Upload your own new text file to the dropbox to be the latest file**
 
+4. **Get the Word's Pronunciation with the Speak Button (Text To Speech - TTS)**
+
 Additionally, you can get the english explanation by clicking notification
 (Free Online Dictionary API : Yandex)
