@@ -1,11 +1,16 @@
 package vocabulary.android.com.myvocabulary;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -20,6 +25,7 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -33,12 +39,79 @@ public class DisplayActivity extends AppCompatActivity {
     private ProgressDialog progressDialog;
     private TextView txt_search, txt_tr, txt_syn, txt_mean, txt_ex;
 
+    //TTS object
+    private TextToSpeech myTTS;
+    private Button mySpeak;
+    //status check code
+    private int MY_DATA_CHECK_CODE = 0;
+    private Context myContext;
+    private String speakWord;
+
     private void initialize(){
         txt_search = (TextView)findViewById(R.id.txt_search);
         txt_tr = (TextView)findViewById(R.id.txt_tr);
         txt_syn = (TextView)findViewById(R.id.txt_syn);
         txt_mean = (TextView)findViewById(R.id.txt_mean);
         txt_ex = (TextView)findViewById(R.id.txt_ex);
+
+        this.myContext = this;
+        //check for TTS data
+        Intent checkTTSIntent = new Intent();
+        checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+        startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
+
+        mySpeak = (Button)findViewById(R.id.speak_btn);
+        mySpeak.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //String words = txt_search.getText().toString();
+                speakWords(speakWord);
+            }
+        });
+    }
+
+    //act on result of TTS data check
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == MY_DATA_CHECK_CODE) {
+            if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
+                //the user has the necessary data - create the TTS
+                myTTS = new TextToSpeech(myContext, new TextToSpeech.OnInitListener() {
+                    @Override
+                    public void onInit(int status) {
+                        //check for successful instantiation
+                        if (status == TextToSpeech.SUCCESS) {
+                            //us solution
+                            int result = myTTS.setLanguage(Locale.US);
+                            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+                                Log.e("TTS", "This Language is not supported");
+                                Intent installIntent = new Intent();
+                                installIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                                startActivity(installIntent);
+                            }else {
+                                mySpeak.setEnabled(true);
+                            }
+                            //Locale[] locales = Locale.getAvailableLocales();
+                            //if(myTTS.isLanguageAvailable(Locale.US)==TextToSpeech.LANG_AVAILABLE)
+                            //    myTTS.setLanguage(Locale.US);
+                        }
+                        else if (status == TextToSpeech.ERROR) {
+                            Toast.makeText(myContext, "Sorry! Text To Speech failed...", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+            }
+            else {
+                //no data - install it now
+                Intent installTTSIntent = new Intent();
+                installTTSIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                startActivity(installTTSIntent);
+            }
+        }
+    }
+
+    private void speakWords(String speech) {
+        //speak straight away
+        myTTS.speak(speech, TextToSpeech.QUEUE_FLUSH, null);
     }
 
     public class Syn
@@ -123,6 +196,7 @@ public class DisplayActivity extends AppCompatActivity {
                         jsonObject = new JSONObject(content);
                         jsonArray = jsonObject.getJSONArray("def");
                         jsonObject = (JSONObject) jsonArray.get(0);
+                        speakWord = jsonObject.getString("text");
                         txt_search.setText(jsonObject.getString("text") + " [ " + jsonObject.getString("ts") + " ]" + ": " + jsonObject.getString("pos") + ". ");
                         jsonArray = jsonObject.getJSONArray("tr");
 

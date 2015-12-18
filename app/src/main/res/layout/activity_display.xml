@@ -44,4 +44,12 @@
         android:text="New Text"
         android:id="@+id/txt_ex"
         android:layout_below="@+id/txt_mean"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/speak_btn"
+        android:layout_toRightOf="@+id/txt_search"
+        android:layout_marginLeft="10dip"
+        android:text="Speak"/>
 </RelativeLayout>

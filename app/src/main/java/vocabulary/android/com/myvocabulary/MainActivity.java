@@ -3,6 +3,7 @@ package vocabulary.android.com.myvocabulary;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -50,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean mLoggedIn;
     private final String VOCABULARY_DIR = "/MyVocabulary/";
     private Long mFileLen;
+    private Context mContext;
 
     @Override
     protected void onResume() {
@@ -120,11 +122,12 @@ public class MainActivity extends AppCompatActivity {
             mDBApi.getSession().startOAuth2Authentication(MainActivity.this);
         //checkAppKeySetup();
 
-        progressDialog = new ProgressDialog(this);
+        this.mContext = this;
+        /*progressDialog = new ProgressDialog(this);
         progressDialog.setMax(100);
         progressDialog.setMessage("Loading");
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        progressDialog.setCancelable(false);
+        progressDialog.setCancelable(false);*/
     }
 
     private void setLoggedIn(boolean loggedIn) {
@@ -209,6 +212,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
+            progressDialog = new ProgressDialog(mContext);
+            progressDialog.setMax(100);
+            progressDialog.setMessage("Loading");
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            progressDialog.setCancelable(false);
             progressDialog.show();
         }
 
