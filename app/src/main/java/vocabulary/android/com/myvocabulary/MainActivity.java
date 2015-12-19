@@ -333,4 +333,54 @@ public class MainActivity extends AppCompatActivity {
     public void ReadBtn(View v) {
         new dropboxApiTask().execute();
     }
+
+    private HashMap<String, String> GetLocalFileMap(){
+        HashMap<String, String> hashMap = new HashMap<String, String>();
+        File file;
+        FileInputStream inputStream;
+        //reading text from file
+        try {
+            file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+            inputStream = new FileInputStream(file);
+            InputStreamReader InputRead = new InputStreamReader(inputStream);
+
+            BufferedReader buffreader = new BufferedReader(InputRead);
+
+            String line;
+
+            do {
+                line = buffreader.readLine();
+                // do something with the line
+                if (line!=null && line.contains("=")) {
+                    String[] strings = line.split("=");
+                    hashMap.put(strings[0], strings[1]);
+                }
+
+            } while (line != null);
+            //char[] inputBuffer= new char[READ_BLOCK_SIZE];
+            //String s="";
+            //int charRead;
+
+            //while ((charRead=InputRead.read(inputBuffer))>0) {
+            // char to string conversion
+            //    String readstring=String.copyValueOf(inputBuffer,0,charRead);
+            //    s +=readstring;
+            //}
+            //InputRead.close();
+
+            inputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return hashMap;
+    }
+
+    public void SearchBtn(View v){
+        Intent intent = new Intent();
+        intent.setClass(MainActivity.this, SearchActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("hashMap", GetLocalFileMap());
+        startActivity(intent);
+    }
 }
