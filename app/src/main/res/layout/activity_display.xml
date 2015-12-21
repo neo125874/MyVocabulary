@@ -63,7 +63,8 @@
             android:layout_height="wrap_content"
             android:text="New Text"
             android:id="@+id/txt_ex"
-            android:layout_below="@+id/txt_mean"/>
+            android:layout_below="@+id/txt_mean"
+            android:layout_marginTop="10dip"/>
 
         <Button
             android:layout_width="wrap_content"

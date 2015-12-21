@@ -210,15 +210,16 @@ public class DisplayActivity extends AppCompatActivity {
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     }
-
+                    txt_ex.setText("");
                     try {
                         Gson gson = new Gson();
                         Wordnik.RootObject rootObject = gson.fromJson(content, Wordnik.RootObject.class);
-                        txt_ex.setText("");
-                        for(int i=0; i<rootObject.getExamples().size(); i++){
-                            if(i>0) txt_ex.append("\n");
 
-                            txt_ex.append(rootObject.getExamples().get(i).getText());
+                        for(int i=1; i<=rootObject.getExamples().size(); i++){
+                            if(i>1) txt_ex.append("\n");
+
+                            txt_ex.append("Ex" + i + "：");
+                            txt_ex.append(rootObject.getExamples().get(i).getText() + "\n");
                         }
                     }catch (Exception e) {
                         e.printStackTrace();
