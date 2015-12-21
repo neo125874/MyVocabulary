@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
@@ -8,49 +8,54 @@
     tools:context="vocabulary.android.com.myvocabulary.DisplayActivity">
 
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New Text"
-        android:id="@+id/txt_search"
-        android:textSize="20dip"/>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New Text"
-        android:id="@+id/txt_tr"
-        android:layout_below="@+id/txt_search"
-        android:layout_marginTop="10dip"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/txt_search"
+            android:textSize="20dip"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New Text"
-        android:id="@+id/txt_syn"
-        android:layout_below="@+id/txt_tr"
-        android:layout_marginTop="10dip"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/txt_tr"
+            android:layout_below="@+id/txt_search"
+            android:layout_marginTop="10dip"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New Text"
-        android:id="@+id/txt_mean"
-        android:layout_below="@+id/txt_syn"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/txt_syn"
+            android:layout_below="@+id/txt_tr"
+            android:layout_marginTop="10dip"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="New Text"
-        android:id="@+id/txt_ex"
-        android:layout_below="@+id/txt_mean"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/txt_mean"
+            android:layout_below="@+id/txt_syn"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/speak_btn"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="10dip"
-        android:layout_alignTop="@+id/txt_tr"
-        android:text="Speak"/>
-</RelativeLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/txt_ex"
+            android:layout_below="@+id/txt_mean"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/speak_btn"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dip"
+            android:layout_alignTop="@+id/txt_tr"
+            android:text="Speak"/>
+    </RelativeLayout>
+</ScrollView>

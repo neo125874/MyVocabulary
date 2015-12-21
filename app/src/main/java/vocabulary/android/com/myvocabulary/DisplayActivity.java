@@ -32,12 +32,20 @@ import cz.msebera.android.httpclient.Header;
 public class DisplayActivity extends AppCompatActivity {
 
     private String vocabulary;
-    private String translateApi = "https://dictionary.yandex.net/api/v1/dicservice.json/lookup";
-    private String translateKey = "dict.1.1.20151207T112349Z.4c76df247f50835e.7db41e42ba45e9ed71b239ee17b72ef529673fb1";
+    private String translateApi = "";
+    private String translateKey = "";
     private AsyncHttpClient client;
     private RequestParams params;
     private ProgressDialog progressDialog;
     private TextView txt_search, txt_tr, txt_syn, txt_mean, txt_ex;
+
+    //Wordnik API key
+    private String mWordnikAPIkey="";
+    private String mWordnikUrl = "http://api.wordnik.com:80/v4/word.json/";
+
+
+    //open dictionary api
+    //private OpenDictionaryAPI api;
 
     //TTS object
     private TextToSpeech myTTS;
@@ -59,6 +67,10 @@ public class DisplayActivity extends AppCompatActivity {
         Intent checkTTSIntent = new Intent();
         checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
         startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
+
+        translateApi = getString(R.string.translateApi);
+        translateKey = getString(R.string.translateKey);
+        mWordnikAPIkey = getString(R.string.WordnikAPIkey);
 
         mySpeak = (Button)findViewById(R.id.speak_btn);
         mySpeak.setOnClickListener(new View.OnClickListener() {
@@ -176,6 +188,50 @@ public class DisplayActivity extends AppCompatActivity {
         doAsyncHttpClient();
     }
 
+    private void doAsyncWordnik(){
+        params = new RequestParams();
+        params.put("api_key", mWordnikAPIkey);
+        params.put("includeDuplicates", false);
+        params.put("useCanonical", false);
+        params.put("skip", 0);
+        params.put("limit", 3);
+        client.get(mWordnikUrl + speakWord + "/examples", params, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                if (progressDialog != null || progressDialog.isShowing())
+                    progressDialog.dismiss();
+
+                String content = "";
+                if (statusCode == 200) {
+                    try {
+                        content = new String(responseBody, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+
+                    try {
+                        Gson gson = new Gson();
+                        Wordnik.RootObject rootObject = gson.fromJson(content, Wordnik.RootObject.class);
+                        txt_ex.setText("");
+                        for(int i=0; i<rootObject.getExamples().size(); i++){
+                            if(i>0) txt_ex.append("\n");
+
+                            txt_ex.append(rootObject.getExamples().get(i).getText());
+                        }
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                if (progressDialog != null || progressDialog.isShowing())
+                    progressDialog.dismiss();
+            }
+        });
+    }
+
     private void doAsyncHttpClient(){
         client.get(translateApi, params, new AsyncHttpResponseHandler() {
             @Override
@@ -226,7 +282,39 @@ public class DisplayActivity extends AppCompatActivity {
 
                         txt_syn.setVisibility(View.GONE);
                         txt_mean.setVisibility(View.GONE);
-                        txt_ex.setVisibility(View.GONE);
+                        //txt_ex.setVisibility(View.GONE);
+                        progressDialog.show();
+                        doAsyncWordnik();
+
+                        /*Dictionary dict = null;
+                        api = new OpenDictionaryAPI(getApplicationContext());
+                        if(api.hasDictionary(new Direction(Language.English, Language.Chinese))){
+                            HashSet<Dictionary> dictionaries = api.getDictionaries(new Direction(Language.English, Language.Chinese));
+                            if (!dictionaries.isEmpty()) {
+                                dict = dictionaries.iterator().next();
+                            }
+                        }*/
+                        /*dict.getTranslationAsText(speakWord, TranslateMode.FULL, TranslateFormat.PLAIN, new Dictionary.TranslateAsTextListener() {
+                            @Override
+                            public void onComplete(String s, TranslateMode translateMode) {
+
+                            }
+
+                            @Override
+                            public void onWordNotFound(ArrayList<String> arrayList) {
+
+                            }
+
+                            @Override
+                            public void onError(com.paragon.open.dictionary.api.Error error) {
+
+                            }
+
+                            @Override
+                            public void onIPCError(String s) {
+
+                            }
+                        });*/
 
                         /*Gson gson = new Gson();
                         Type listType = new TypeToken<ArrayList<Syn>>(){}.getType();
