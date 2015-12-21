@@ -13,5 +13,7 @@ Portable Editable Your Own Vocabulary
 
 4. **Get the Word's Pronunciation with the Speak Button (Text To Speech - TTS)**
 
-Additionally, you can get the english explanation by clicking notification
-(Free Online Dictionary API : Yandex)
+Additionally, ~~you can get the english explanation by clicking notification
+(Free Online Dictionary API : Yandex)~~
+
+######you could get the synonym, definition, and example.(Free Online Dictionary API : Yandex & Worknik Developer Api)
