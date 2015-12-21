@@ -17,6 +17,7 @@ import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+import com.ms.square.android.expandabletextview.ExpandableTextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,7 +38,8 @@ public class DisplayActivity extends AppCompatActivity {
     private AsyncHttpClient client;
     private RequestParams params;
     private ProgressDialog progressDialog;
-    private TextView txt_search, txt_tr, txt_syn, txt_mean, txt_ex;
+    private TextView txt_search, txt_syn, txt_mean, txt_ex;
+    private ExpandableTextView txt_tr;
 
     //Wordnik API key
     private String mWordnikAPIkey="";
@@ -57,7 +59,7 @@ public class DisplayActivity extends AppCompatActivity {
 
     private void initialize(){
         txt_search = (TextView)findViewById(R.id.txt_search);
-        txt_tr = (TextView)findViewById(R.id.txt_tr);
+        txt_tr = (ExpandableTextView)findViewById(R.id.ex_txt_tr);
         txt_syn = (TextView)findViewById(R.id.txt_syn);
         txt_mean = (TextView)findViewById(R.id.txt_mean);
         txt_ex = (TextView)findViewById(R.id.txt_ex);
@@ -260,25 +262,32 @@ public class DisplayActivity extends AppCompatActivity {
                         Type listType = new TypeToken<ArrayList<SynObject>>(){}.getType();
                         ArrayList<SynObject> synObjects = gson.fromJson(jsonArray.toString(), listType);
                         txt_tr.setText("");
+                        String tr_content = "";
                         for(int i=0; i<synObjects.size(); i++){
                             if(i > 0){
-                                txt_tr.append("\n\n");
+                                //txt_tr.append("\n\n");
+                                tr_content += "\n\n";
                             }
                             SynObject synObject = synObjects.get(i);
-                            txt_tr.append(synObject.getText()
-                                    + " (" + synObject.getPos() + ") ");
+                            //txt_tr.append(synObject.getText()
+                            //        + " (" + synObject.getPos() + ") ");
+                            tr_content += synObject.getText() + " (" + synObject.getPos() + ") ";
 
                             if(synObject.getSyn() != null){
-                                txt_tr.append("\n");
+                                //txt_tr.append("\n");
+                                tr_content += "\n";
                                 ArrayList<Syn> synArrayList = synObject.getSyn();
                                 for (int j=0; j<synArrayList.size(); j++){
                                     Syn syn = synArrayList.get(j);
-                                    if(j > 0) txt_tr.append("\n");
+                                    if(j > 0) //txt_tr.append("\n");
+                                        tr_content += "\n";
 
-                                    txt_tr.append("\t\t" + syn.getText() + " (" + syn.getPos() + ") ");
+                                    //txt_tr.append("\t\t" + syn.getText() + " (" + syn.getPos() + ") ");
+                                    tr_content += "\t\t" + syn.getText() + " (" + syn.getPos() + ") ";
                                 }
                             }
                         }
+                        txt_tr.setText(tr_content);
 
                         txt_syn.setVisibility(View.GONE);
                         txt_mean.setVisibility(View.GONE);
