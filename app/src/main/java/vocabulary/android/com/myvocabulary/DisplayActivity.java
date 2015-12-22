@@ -45,6 +45,10 @@ public class DisplayActivity extends AppCompatActivity {
     private String mWordnikAPIkey="";
     private String mWordnikUrl = "http://api.wordnik.com:80/v4/word.json/";
 
+    //Yandex Translate
+    private String mYandexUrl = "";
+    private String mYandexKey = "";
+
 
     //open dictionary api
     //private OpenDictionaryAPI api;
@@ -73,6 +77,9 @@ public class DisplayActivity extends AppCompatActivity {
         translateApi = getString(R.string.translateApi);
         translateKey = getString(R.string.translateKey);
         mWordnikAPIkey = getString(R.string.WordnikAPIkey);
+
+        mYandexUrl = getString(R.string.YandexTransUrl);
+        mYandexKey = getString(R.string.YandexTransApiKey);
 
         mySpeak = (Button)findViewById(R.id.speak_btn);
         mySpeak.setOnClickListener(new View.OnClickListener() {
@@ -190,6 +197,47 @@ public class DisplayActivity extends AppCompatActivity {
         doAsyncHttpClient();
     }
 
+    private  void doAsyncYandexTrans(){
+        params = new RequestParams();
+        params.put("key", mYandexKey);
+        params.put("text", speakWord);
+        params.put("lang", "en-zh");
+        params.put("format", "plain");
+        client.get(mYandexUrl, params, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                if (progressDialog != null || progressDialog.isShowing())
+                    progressDialog.dismiss();
+
+                String content = "";
+                if (statusCode == 200) {
+                    try {
+                        content = new String(responseBody, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    txt_search.append("\n");
+                    try{
+                        Gson gson = new Gson();
+                        YandexTrans.RootObject rootObject = gson.fromJson(content, YandexTrans.RootObject.class);
+                        for(int i=0; i<rootObject.getText().size(); i++){
+                            txt_search.append(rootObject.getText().get(i));
+                            if(i > 0) txt_search.append("；");
+                        }
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                if (progressDialog != null || progressDialog.isShowing())
+                    progressDialog.dismiss();
+            }
+        });
+    }
+
     private void doAsyncWordnik(){
         params = new RequestParams();
         params.put("api_key", mWordnikAPIkey);
@@ -215,14 +263,19 @@ public class DisplayActivity extends AppCompatActivity {
                         Gson gson = new Gson();
                         Wordnik.RootObject rootObject = gson.fromJson(content, Wordnik.RootObject.class);
 
+                        int j=0;
                         for(int i=1; i<=rootObject.getExamples().size(); i++){
                             if(i>1) txt_ex.append("\n");
 
                             txt_ex.append("Ex" + i + "：");
-                            txt_ex.append(rootObject.getExamples().get(i).getText() + "\n");
+                            txt_ex.append(rootObject.getExamples().get(j).getText() + "\n");
+                            j++;
                         }
                     }catch (Exception e) {
                         e.printStackTrace();
+                    }finally {
+                        progressDialog.show();
+                        doAsyncYandexTrans();
                     }
                 }
             }
