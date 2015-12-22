@@ -17,3 +17,5 @@ Additionally, ~~you can get the english explanation by clicking notification
 (Free Online Dictionary API : Yandex)~~
 
 ######you could get the synonym, definition, and example.(Free Online Dictionary API : Yandex & Worknik Developer Api)
+
+`Now with Yandex Translate, we have English to Chinese Vocabulary Translation`
