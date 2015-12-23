@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import cz.msebera.android.httpclient.Header;
@@ -38,12 +39,13 @@ public class DisplayActivity extends AppCompatActivity {
     private AsyncHttpClient client;
     private RequestParams params;
     private ProgressDialog progressDialog;
-    private TextView txt_search, txt_syn, txt_mean, txt_ex;
-    private ExpandableTextView txt_tr;
+    private TextView txt_search, txt_syn, txt_mean;
+    private ExpandableTextView txt_tr, txt_ex;
 
     //Wordnik API key
     private String mWordnikAPIkey="";
     private String mWordnikUrl = "http://api.wordnik.com:80/v4/word.json/";
+    private String mWorknikDefUrl = "http://api.wordnik.com:80/v4/word.json/";
 
     //Yandex Translate
     private String mYandexUrl = "";
@@ -66,7 +68,7 @@ public class DisplayActivity extends AppCompatActivity {
         txt_tr = (ExpandableTextView)findViewById(R.id.ex_txt_tr);
         txt_syn = (TextView)findViewById(R.id.txt_syn);
         txt_mean = (TextView)findViewById(R.id.txt_mean);
-        txt_ex = (TextView)findViewById(R.id.txt_ex);
+        txt_ex = (ExpandableTextView)findViewById(R.id.txt_ex);
 
         this.myContext = this;
         //check for TTS data
@@ -184,6 +186,8 @@ public class DisplayActivity extends AppCompatActivity {
         initialize();
 
         progressDialog = new ProgressDialog(this);
+        progressDialog.setMax(100);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.setMessage("Loading");
         progressDialog.setCancelable(false);
         progressDialog.show();
@@ -197,6 +201,56 @@ public class DisplayActivity extends AppCompatActivity {
         doAsyncHttpClient();
     }
 
+    private void doAsyncWordnikDef(){
+        params = new RequestParams();
+        params.put("limit", 3);
+        params.put("includeRelated", false);
+        params.put("useCanonical", false);
+        params.put("includeTags", false);
+        params.put("api_key", mWordnikAPIkey);
+        client.get(mWorknikDefUrl + speakWord + "/definitions", params, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                if (progressDialog != null || progressDialog.isShowing()){
+                    progressDialog.setProgress(100);
+                    progressDialog.dismiss();
+                }
+
+                String content = "";
+                if (statusCode == 200) {
+                    try {
+                        content = new String(responseBody, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    txt_mean.setText("");
+                    try {
+                        Gson gson = new Gson();
+                        List<WordnikDef.RootObject> rootObject = gson.fromJson(content, new TypeToken<List<WordnikDef.RootObject>>(){}.getType());
+
+                        String meaning = "";
+                        int j=1;
+                        for(int i=0; i<rootObject.size(); i++){
+                            if(i>0) meaning += "\n";
+                            //WordnikDef.RootObject word = gson.fromJson(rootObject.get(i).toString(), WordnikDef.RootObject.class);
+                            meaning += j + ". " + rootObject.get(i).getText();
+                            j++;
+                        }
+                        txt_mean.setText(meaning);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                if (progressDialog != null || progressDialog.isShowing())
+                    progressDialog.dismiss();
+            }
+        });
+    }
+
     private  void doAsyncYandexTrans(){
         params = new RequestParams();
         params.put("key", mYandexKey);
@@ -207,7 +261,8 @@ public class DisplayActivity extends AppCompatActivity {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 if (progressDialog != null || progressDialog.isShowing())
-                    progressDialog.dismiss();
+                    //progressDialog.dismiss();
+                    progressDialog.setProgress(75);
 
                 String content = "";
                 if (statusCode == 200) {
@@ -226,6 +281,9 @@ public class DisplayActivity extends AppCompatActivity {
                         }
                     }catch (Exception e){
                         e.printStackTrace();
+                    }
+                    finally {
+                        doAsyncWordnikDef();
                     }
                 }
             }
@@ -249,7 +307,8 @@ public class DisplayActivity extends AppCompatActivity {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 if (progressDialog != null || progressDialog.isShowing())
-                    progressDialog.dismiss();
+                    //progressDialog.dismiss();
+                    progressDialog.setProgress(50);
 
                 String content = "";
                 if (statusCode == 200) {
@@ -263,18 +322,23 @@ public class DisplayActivity extends AppCompatActivity {
                         Gson gson = new Gson();
                         Wordnik.RootObject rootObject = gson.fromJson(content, Wordnik.RootObject.class);
 
+                        String examples = "";
                         int j=0;
                         for(int i=1; i<=rootObject.getExamples().size(); i++){
-                            if(i>1) txt_ex.append("\n");
+                            if(i>1) //txt_ex.append("\n");
+                                examples += "\n";
 
-                            txt_ex.append("Ex" + i + "：");
-                            txt_ex.append(rootObject.getExamples().get(j).getText() + "\n");
+                            //txt_ex.append("Ex" + i + "：");
+                            examples += "Ex" + i + "：";
+                            //txt_ex.append(rootObject.getExamples().get(j).getText() + "\n");
+                            examples += rootObject.getExamples().get(j).getText() + "\n";
                             j++;
                         }
+                        txt_ex.setText(examples);
                     }catch (Exception e) {
                         e.printStackTrace();
                     }finally {
-                        progressDialog.show();
+                        //progressDialog.show();
                         doAsyncYandexTrans();
                     }
                 }
@@ -293,7 +357,8 @@ public class DisplayActivity extends AppCompatActivity {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 if (progressDialog != null || progressDialog.isShowing())
-                    progressDialog.dismiss();
+                    //progressDialog.dismiss();
+                    progressDialog.setProgress(25);
 
                 String content = "";
                 JSONObject jsonObject = null;
@@ -344,9 +409,9 @@ public class DisplayActivity extends AppCompatActivity {
                         txt_tr.setText(tr_content);
 
                         txt_syn.setVisibility(View.GONE);
-                        txt_mean.setVisibility(View.GONE);
+                        //txt_mean.setVisibility(View.GONE);
                         //txt_ex.setVisibility(View.GONE);
-                        progressDialog.show();
+                        //progressDialog.show();
                         doAsyncWordnik();
 
                         /*Dictionary dict = null;

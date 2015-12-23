@@ -54,17 +54,35 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New Text"
             android:id="@+id/txt_mean"
-            android:layout_below="@+id/txt_syn"/>
+            android:layout_below="@+id/txt_syn"
+            android:layout_marginTop="10dip"/>
 
-        <TextView
+
+        <com.ms.square.android.expandabletextview.ExpandableTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New Text"
             android:id="@+id/txt_ex"
+            android:text="New Text"
             android:layout_below="@+id/txt_mean"
-            android:layout_marginTop="10dip"/>
+            android:layout_marginTop="10dip"
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:expandableTextView="http://schemas.android.com/apk/res-auto"
+            expandableTextView:animDuration="200">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:id="@id/expandable_text"/>
+            <ImageButton
+                android:id="@id/expand_collapse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right|bottom"
+                android:background="@android:color/transparent"/>
+        </com.ms.square.android.expandabletextview.ExpandableTextView>
+
 
         <Button
             android:layout_width="wrap_content"
