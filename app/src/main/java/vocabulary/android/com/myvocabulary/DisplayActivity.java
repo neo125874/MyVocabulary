@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.asprise.ocr.Ocr;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
@@ -63,7 +64,16 @@ public class DisplayActivity extends AppCompatActivity {
     private Context myContext;
     private String speakWord;
 
+    //ocr
+    private Ocr ocr;
+
     private void initialize(){
+        //ocr
+        Ocr.setUp(); // one time setup
+        ocr = new Ocr(); // create a new OCR engine
+        ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
+        //String s = ocr.recognize(new File[] {new File("test-image.png")}, Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
+
         txt_search = (TextView)findViewById(R.id.txt_search);
         txt_tr = (ExpandableTextView)findViewById(R.id.ex_txt_tr);
         txt_syn = (TextView)findViewById(R.id.txt_syn);
