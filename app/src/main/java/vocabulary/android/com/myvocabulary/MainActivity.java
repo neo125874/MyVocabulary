@@ -394,7 +394,18 @@ public class MainActivity extends AppCompatActivity {
 
     // Read text from file
     public void ReadBtn(View v) {
-        new dropboxApiTask().execute();
+        //new dropboxApiTask().execute();
+        Intent myIntent = new Intent(MainActivity.this, MyReceiver.class);
+        myIntent.putExtra("map", GetLocalFileMap());
+        pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, myIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(calendar.MINUTE, 1);
+        long howmany = calendar.getTimeInMillis() - System.currentTimeMillis();
+
+        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, howmany, 1 * 60 * 1000, pendingIntent);
     }
 
     private HashMap<String, String> GetLocalFileMap(){

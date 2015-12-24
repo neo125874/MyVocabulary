@@ -64,7 +64,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_below="@+id/button1"
-        android:text="Read Vocabulary From Dropbox File"
+        android:text="Read Vocabulary From Local File"
         android:onClick="ReadBtn"
         android:layout_margin="5dp" />
     <Button
