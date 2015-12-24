@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MyVocabulary</string>
+    <string name="app_key">1ne67mr2q1lc7r5</string>
+    <string name="app_secret">836v8cy6knkfcrf</string>
 </resources>
