@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -52,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
     private final String VOCABULARY_DIR = "/MyVocabulary/";
     private Long mFileLen;
     private Context mContext;
+
+    //swipe refresh
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
     @Override
     protected void onResume() {
@@ -102,10 +106,68 @@ public class MainActivity extends AppCompatActivity {
         edit.commit();
     }
 
+    private void initialize(){
+        mSwipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swipe_view);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshFromDropbox();
+                //mSwipeRefreshLayout.setRefreshing(false);
+            }
+        });
+        mSwipeRefreshLayout.setColorSchemeResources(R.color.orange, R.color.green, R.color.blue);
+    }
+
+    private class DownloadFilesTask extends AsyncTask<Void, Void, Void>{
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            Toast.makeText(getBaseContext(), "File renewed successfully!",
+                    Toast.LENGTH_SHORT).show();
+            if (mSwipeRefreshLayout.isRefreshing()) {
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try{
+                DropboxAPI.Entry dirent = mDBApi.metadata(VOCABULARY_DIR, 1000, null, true, null);
+                ArrayList<DropboxAPI.Entry> thumbs = new ArrayList<DropboxAPI.Entry>();
+                for (DropboxAPI.Entry ent: dirent.contents) {
+                    // Add it to the list of thumbs we can choose from
+                    thumbs.add(ent);
+                }
+                int index = 0;
+                for(int i=0; i<thumbs.size(); i++){
+                    if(thumbs.get(i).path.startsWith(VOCABULARY_DIR)){
+                        index = i;
+                    }
+                }
+                DropboxAPI.Entry ent = thumbs.get(index);
+                String path = ent.path;
+                mFileLen = ent.bytes;
+
+                File dropboxFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "myVocabularyTextFile.txt");
+                FileOutputStream outputStream = new FileOutputStream(dropboxFile);
+                mDBApi.getFile(path, null, outputStream, null);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+    }
+
+    private void refreshFromDropbox(){
+        new DownloadFilesTask().execute();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        initialize();
 
         txtEng=(EditText)findViewById(R.id.editText1);
         txtCht=(EditText)findViewById(R.id.editText2);
