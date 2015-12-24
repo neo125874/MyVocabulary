@@ -32,4 +32,5 @@ dependencies {
     compile 'com.android.support:support-v4:23.0.+'
     compile group: 'com.asprise.ocr', name: 'java-ocr-api', version: '[15,)'
     compile 'com.github.jkwiecien:EasyImage:1.1.2'
+
 }
