@@ -51,16 +51,25 @@ public class MyAlarmService extends Service {
 
         myIntent.putExtra("translate", randomKey);
 
-        Notification notification = new Notification(R.mipmap.ic_launcher,
-                randomKey + "：" + value,
-                System.currentTimeMillis());
-        myIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP| Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
         PendingIntent pendingNotificationIntent = PendingIntent.getActivity(this.getApplicationContext(), 0, myIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        notification.flags |= Notification.FLAG_AUTO_CANCEL;
-        notification.setLatestEventInfo(this.getApplicationContext(), randomKey, value, pendingNotificationIntent);
+        Notification.Builder notification = new Notification.Builder(this.getApplicationContext());
+        notification.setSmallIcon(R.mipmap.ic_launcher)
+                .setTicker(randomKey + "：" + value)
+                .setWhen(System.currentTimeMillis())
+                .setContentTitle(randomKey)
+                .setContentText(value)
+                .setContentIntent(pendingNotificationIntent)
+                .setAutoCancel(false);
+        //Notification notification = new Notification(R.mipmap.ic_launcher,
+        //        randomKey + "：" + value,
+        //        System.currentTimeMillis());
+        myIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
-        mManager.notify(0, notification);
+
+        //notification.flags |= Notification.FLAG_AUTO_CANCEL;
+        //notification.setLatestEventInfo(this.getApplicationContext(), randomKey, value, pendingNotificationIntent);
+
+        mManager.notify(0, notification.build());
 
         PowerManager pm = (PowerManager)this.getApplicationContext().getSystemService(Context.POWER_SERVICE);
         boolean isScreenOn = pm.isScreenOn();
