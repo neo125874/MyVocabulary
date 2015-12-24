@@ -30,6 +30,6 @@ dependencies {
     compile 'com.google.code.gson:gson:2.3'
     compile 'com.ms-square:expandableTextView:0.1.4'
     compile 'com.android.support:support-v4:23.0.+'
-    compile group: 'com.asprise.ocr', name: 'java-ocr-api', version: '[15,)'
+    //compile group: 'com.asprise.ocr', name: 'java-ocr-api', version: '[15,)'
     compile 'com.github.jkwiecien:EasyImage:1.1.2'
 }
