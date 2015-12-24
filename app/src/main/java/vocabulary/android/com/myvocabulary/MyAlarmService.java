@@ -59,7 +59,7 @@ public class MyAlarmService extends Service {
                 .setContentTitle(randomKey)
                 .setContentText(value)
                 .setContentIntent(pendingNotificationIntent)
-                .setAutoCancel(false);
+                .setAutoCancel(true);
         //Notification notification = new Notification(R.mipmap.ic_launcher,
         //        randomKey + "：" + value,
         //        System.currentTimeMillis());
