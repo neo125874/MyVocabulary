@@ -115,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 //mSwipeRefreshLayout.setRefreshing(false);
             }
         });
+        //resource not color
         mSwipeRefreshLayout.setColorSchemeResources(R.color.orange, R.color.green, R.color.blue);
     }
 
