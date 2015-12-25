@@ -11,6 +11,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -32,4 +33,6 @@ dependencies {
     compile 'com.android.support:support-v4:23.0.+'
     //compile group: 'com.asprise.ocr', name: 'java-ocr-api', version: '[15,)'
     compile 'com.github.jkwiecien:EasyImage:1.1.2'
+    //compile project(':tess-two')
+    //compile files('libs/tess-two.tesseract3.01-leptonica1.68-LibJPEG6b.jar')
 }

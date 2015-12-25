@@ -3,6 +3,8 @@ package vocabulary.android.com.myvocabulary;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
@@ -23,6 +25,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -30,6 +35,8 @@ import java.util.List;
 import java.util.Locale;
 
 import cz.msebera.android.httpclient.Header;
+import pl.aprilapps.easyphotopicker.DefaultCallback;
+import pl.aprilapps.easyphotopicker.EasyImage;
 
 public class DisplayActivity extends AppCompatActivity {
 
@@ -68,6 +75,11 @@ public class DisplayActivity extends AppCompatActivity {
 
     private void initialize(){
         //ocr
+        EasyImage.configuration(this)
+                .setImagesFolderName("tesseract") //images folder name, default is "EasyImage"
+                        .saveInAppExternalFilesDir(); //if you want to use root internal memory for storying images
+                //.saveInRootPicturesDirectory(); //if you want to use internal memory for storying images - default
+
         //Ocr.setUp(); // one time setup
         //ocr = new Ocr(); // create a new OCR engine
         //ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
@@ -138,7 +150,43 @@ public class DisplayActivity extends AppCompatActivity {
                 installTTSIntent.setAction(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
                 startActivity(installTTSIntent);
             }
+        }else{
+            EasyImage.handleActivityResult(requestCode, resultCode, data, this, new DefaultCallback() {
+                @Override
+                public void onImagePickerError(Exception e, EasyImage.ImageSource source) {
+                    //Some error handling
+                }
+
+                @Override
+                public void onImagePicked(File imageFile, EasyImage.ImageSource source) {
+                    //Handle the image
+                    onPhotoReturned(imageFile);
+                }
+
+                @Override
+                public void onCanceled(EasyImage.ImageSource source) {
+                    //Cancel handling, you might wanna remove taken photo if it was canceled
+                    if (source == EasyImage.ImageSource.CAMERA) {
+                        File photoFile = EasyImage.lastlyTakenButCanceledPhoto(DisplayActivity.this);
+                        if (photoFile != null) photoFile.delete();
+                    }
+                }
+            });
         }
+    }
+
+    private void onPhotoReturned(File imageFile){
+        TessOCR tessOCR = new TessOCR();
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap bitmap=null;
+        try {
+            bitmap = BitmapFactory.decodeStream(new FileInputStream(imageFile), null, options);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        String result = tessOCR.getOCRResult(bitmap);
+        txt_syn.setText(result);
     }
 
     private void speakWords(String speech) {
@@ -417,7 +465,7 @@ public class DisplayActivity extends AppCompatActivity {
                         }
                         txt_tr.setText(tr_content);
 
-                        txt_syn.setVisibility(View.GONE);
+                        //txt_syn.setVisibility(View.GONE);
                         //txt_mean.setVisibility(View.GONE);
                         //txt_ex.setVisibility(View.GONE);
                         //progressDialog.show();
