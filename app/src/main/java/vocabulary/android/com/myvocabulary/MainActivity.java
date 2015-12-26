@@ -20,6 +20,7 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.ProgressListener;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.loopj.android.http.AsyncHttpClient;
 
 import java.io.BufferedReader;
@@ -56,6 +57,9 @@ public class MainActivity extends AppCompatActivity {
 
     //swipe refresh
     private SwipeRefreshLayout mSwipeRefreshLayout;
+
+    //fab
+    private FloatingActionsMenu floatingActionsMenu;
 
     @Override
     protected void onResume() {
@@ -117,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
         });
         //resource not color
         mSwipeRefreshLayout.setColorSchemeResources(R.color.orange, R.color.green, R.color.blue);
+
+        floatingActionsMenu = (FloatingActionsMenu)findViewById(R.id.fam);
+
     }
 
     private class DownloadFilesTask extends AsyncTask<Void, Void, Void>{
