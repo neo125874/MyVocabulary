@@ -1,14 +1,22 @@
 package vocabulary.android.com.myvocabulary;
 
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -20,17 +28,24 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.ProgressListener;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
+import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.loopj.android.http.AsyncHttpClient;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
@@ -60,6 +75,16 @@ public class MainActivity extends AppCompatActivity {
 
     //fab
     private FloatingActionsMenu floatingActionsMenu;
+    private FloatingActionButton fabCamera, fabGallery;
+    private static final int REQUEST_TAKE_PHOTO = 1;
+    private static final int REQUEST_PICK_PHOTO = 2;
+    private ProgressDialog mProgressDialog;
+    private String mCurrentPhotoPath;
+    private TessOCR mTessOCR;
+
+    //init ocr
+    private static String DATA_PATH = Environment.getExternalStorageDirectory().toString() + "/MyVocabularyOCR/";
+    private static String TAG = "MainActivity.java";
 
     @Override
     protected void onResume() {
@@ -78,6 +103,20 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("DbAuthLog", "Error authenticating", e);
             }
         }
+
+        Intent intent = getIntent();
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            Uri uri = (Uri) intent
+                    .getParcelableExtra(Intent.EXTRA_STREAM);
+            uriOCR(uri);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        mTessOCR.onDestroy();
     }
 
     private void storeAuth(AndroidAuthSession session) {
@@ -110,6 +149,116 @@ public class MainActivity extends AppCompatActivity {
         edit.commit();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_TAKE_PHOTO
+                && resultCode == Activity.RESULT_OK) {
+            setPic();
+        }
+        else if (requestCode == REQUEST_PICK_PHOTO
+                && resultCode == Activity.RESULT_OK) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                uriOCR(uri);
+            }
+        }
+    }
+
+    private void uriOCR(Uri uri) {
+        if (uri != null) {
+            InputStream is = null;
+            try {
+                is = getContentResolver().openInputStream(uri);
+                Bitmap bitmap = BitmapFactory.decodeStream(is);
+                //mImage.setImageBitmap(bitmap);
+                doOCR(bitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    private void setPic() {
+        // Get the dimensions of the View
+        //int targetW = mImage.getWidth();
+        //int targetH = mImage.getHeight();
+
+        // Get the dimensions of the bitmap
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        //bmOptions.inJustDecodeBounds = true;
+        //bmOptions.inSampleSize = 4;
+        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
+
+        try {
+            ExifInterface exif = new ExifInterface(mCurrentPhotoPath);
+            int exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+
+            Log.v(TAG, "Orient: " + exifOrientation);
+
+            int rotate = 0;
+
+            switch (exifOrientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    rotate = 90;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    rotate = 180;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    rotate = 270;
+                    break;
+            }
+
+            Log.v(TAG, "Rotation: " + rotate);
+
+            if (rotate != 0) {
+
+                // Getting width & height of the given image.
+                int w = bitmap.getWidth();
+                int h = bitmap.getHeight();
+
+                // Setting pre rotate
+                Matrix mtx = new Matrix();
+                mtx.preRotate(rotate);
+
+                // Rotating Bitmap
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, w, h, mtx, false);
+            }
+
+            // Convert to ARGB_8888, required by tess
+            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+        } catch (IOException e) {
+            Log.e(TAG, "Couldn't correct orientation: " + e.toString());
+        }
+
+        //int photoW = bmOptions.outWidth;
+        //int photoH = bmOptions.outHeight;
+
+        // Determine how much to scale down the image
+        //int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+
+        // Decode the image file into a Bitmap sized to fill the View
+        //bmOptions.inJustDecodeBounds = false;
+        //bmOptions.inSampleSize = scaleFactor << 1;
+        //bmOptions.inPurgeable = true;
+
+        //Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
+        //mImage.setImageBitmap(bitmap);
+
+        Log.v(TAG, "Before baseApi");
+        doOCR(bitmap);
+
+    }
+
     private void initialize(){
         mSwipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swipe_view);
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -123,7 +272,101 @@ public class MainActivity extends AppCompatActivity {
         mSwipeRefreshLayout.setColorSchemeResources(R.color.orange, R.color.green, R.color.blue);
 
         floatingActionsMenu = (FloatingActionsMenu)findViewById(R.id.fam);
+        fabCamera = (FloatingActionButton)findViewById(R.id.fab_camera);
+        fabCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                takePhoto();
+            }
+        });
+        fabGallery = (FloatingActionButton)findViewById(R.id.fab_gallery);
+        fabGallery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pickPhoto();
+            }
+        });
 
+        //mTessOCR = new TessOCR(DATA_PATH);
+    }
+
+    private void pickPhoto() {
+        Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, REQUEST_PICK_PHOTO);
+    }
+
+    private void takePhoto() {
+        dispatchTakePictureIntent();
+    }
+
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        // Ensure that there's a camera activity to handle the intent
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            // Create the File where the photo should go
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                // Error occurred while creating the File
+
+            }
+            // Continue only if the File was successfully created
+            if (photoFile != null) {
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
+                startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
+            }
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
+                .format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        /*String storageDir = Environment.getExternalStorageDirectory()
+                + "/TessOCR";*/
+        String storageDir = DATA_PATH + "tessdata/";
+        File dir = new File(storageDir);
+        if (!dir.exists())
+            dir.mkdir();
+
+        File image = new File(storageDir + "/" + imageFileName + ".jpg");
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
+
+    private void doOCR(final Bitmap bitmap) {
+        if (mProgressDialog == null) {
+            mProgressDialog = ProgressDialog.show(this, "Processing",
+                    "Doing OCR...", true);
+        }
+        else {
+            mProgressDialog.show();
+        }
+
+        new Thread(new Runnable() {
+            public void run() {
+
+                final String result = mTessOCR.getOCRResult(bitmap);
+
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        if (result != null && !result.equals("")) {
+                            txtEng.setText(result);
+                        }
+
+                        mProgressDialog.dismiss();
+                    }
+
+                });
+
+            };
+        }).start();
     }
 
     private class DownloadFilesTask extends AsyncTask<Void, Void, Void>{
@@ -170,12 +413,52 @@ public class MainActivity extends AppCompatActivity {
         new DownloadFilesTask().execute();
     }
 
+    private void initializeOCR(){
+        String[] paths = new String[] { DATA_PATH, DATA_PATH + "tessdata/" };
+        for (String path : paths) {
+            File dir = new File(path);
+            if (!dir.exists()) {
+                if (!dir.mkdirs()) {
+                    Log.v(TAG, "ERROR: Creation of directory " + path + " on sdcard failed");
+                    return;
+                } else {
+                    Log.v(TAG, "Created directory " + path + " on sdcard");
+                }
+            }
+        }
+
+        if (!(new File(DATA_PATH + "tessdata/eng.traineddata")).exists()) {
+            try {
+
+                AssetManager assetManager = getAssets();
+                InputStream in = assetManager.open("eng.traineddata");
+                OutputStream out = new FileOutputStream(DATA_PATH + "tessdata/eng.traineddata");
+
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                in.close();
+                out.close();
+
+                Log.v(TAG, "Copied eng traineddata");
+            } catch (IOException e) {
+                Log.e(TAG, "Was unable to copy eng traineddata " + e.toString());
+            }
+        }
+
+        mTessOCR = new TessOCR(DATA_PATH);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         initialize();
+        initializeOCR();
 
         txtEng=(EditText)findViewById(R.id.editText1);
         txtCht=(EditText)findViewById(R.id.editText2);

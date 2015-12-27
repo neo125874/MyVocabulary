@@ -32,7 +32,7 @@ dependencies {
     compile 'com.ms-square:expandableTextView:0.1.4'
     compile 'com.android.support:support-v4:23.0.+'
     //compile group: 'com.asprise.ocr', name: 'java-ocr-api', version: '[15,)'
-    compile 'com.github.jkwiecien:EasyImage:1.1.2'
+    //compile 'com.github.jkwiecien:EasyImage:1.1.2'
     //compile project(':tess-two')
     //compile files('libs/tess-two.tesseract3.01-leptonica1.68-LibJPEG6b.jar')
     //compile 'com.melnykov:floatingactionbutton:1.3.0'
