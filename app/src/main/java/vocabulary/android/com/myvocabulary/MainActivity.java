@@ -698,6 +698,13 @@ public class MainActivity extends AppCompatActivity {
         alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, howmany, 1 * 60 * 1000, pendingIntent);
     }
 
+    public void StopService(){
+        Intent myIntent = new Intent(MainActivity.this, MyReceiver.class);
+        pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, myIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        manager.cancel(pendingIntent);
+    }
+
     private HashMap<String, String> GetLocalFileMap(){
         HashMap<String, String> hashMap = new HashMap<String, String>();
         File file;
