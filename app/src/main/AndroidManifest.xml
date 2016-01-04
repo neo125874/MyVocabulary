@@ -49,6 +49,9 @@
         <activity
             android:name=".SearchActivity"
             android:screenOrientation="portrait"></activity>
+        <service
+            android:name=".MessageBox"
+            android:enabled="true"/>
     </application>
 
 </manifest>
